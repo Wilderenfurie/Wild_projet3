@@ -1,9 +1,15 @@
 import pandas as pd
 import numpy as np
 import requests
-import streamlit as st
 import yfinance as yf
 from datetime import datetime
+from bs4 import BeautifulSoup
+import streamlit as st
+import re
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 #historique quotidien du prix de vente a la cloture de crude oil wti
 def oil_historical_price_api():
@@ -41,3 +47,92 @@ def oil_days_supply_api():
     df_days_supply = pd.json_normalize(result,record_path=["response","data"])
     return df_days_supply
 
+def oil_key_indicators():
+    url="https://www.investing.com/commodities/crude-oil-technical"
+    navigator = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1)'
+    html = requests.get(url, headers={'User-Agent': navigator})
+    soup=BeautifulSoup(html.text, 'html.parser')
+    indicators = soup.find_all('div', {"class" : "dynamic-table_dynamic-table-wrapper__MhGMX"})
+    list_indicators=[]
+    for i in range(len(indicators)):
+        list_indicators.append(indicators[i].text)
+    return list_indicators
+ 
+#recuperation des indicators clé de investing.com
+def oil_key_indicators():
+    url="https://www.investing.com/commodities/crude-oil-technical"
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+
+    # gestion des popup cookies
+    try:
+        cookie_button = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler"))
+        )
+        cookie_button.click()
+        print("Cookies acceptés.")
+    except:
+        print("Aucune pop-up de cookies détectée.")
+
+    # cliquer sur le bouton "Daily"
+    try:
+        daily_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-test='1d']"))
+        )
+        daily_button.click()
+        print("Bouton 'Daily' cliqué.")
+    except Exception as e:
+        print(f"Erreur en cliquant sur 'Daily' : {e}")
+        driver.quit()
+        return pd.DataFrame()
+
+    # Attendre que les indicateurs techniques se chargent
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "dynamic-table_dynamic-table-wrapper__MhGMX"))
+        )
+        print("Données chargées.")
+        html = driver.page_source  # Extraire le HTML mis à jour
+    except Exception as e:
+        print(f"Erreur lors du chargement des données : {e}")
+        driver.quit()
+        return pd.DataFrame()
+
+    driver.quit()  # Fermer proprement
+
+    soup=BeautifulSoup(html, 'html.parser')
+    indicators = soup.find_all('div', {"class" : "dynamic-table_dynamic-table-wrapper__MhGMX"})
+
+    raw_string=indicators[1].text
+    #list_indicators=[]
+    #for i in range(len(indicators)):
+        #list_indicators.append(indicators[i].text)
+    #return list_indicators
+    raw_string_cleaned = (
+    raw_string.replace("Buy", "Buy ")
+              .replace("Sell", "Sell ")
+              .replace("Neutral", "Neutral ")
+              .replace("Overbought", "Overbought ")
+              .replace("Oversold", "Oversold ")
+              .replace("Less Volatility", "Less Volatility ")
+              .replace("High Volatility", "High Volatility ")
+              .replace("NameValueAction", "")
+    )
+
+    #  Extraction avec regex
+    pattern = r"([a-zA-Z0-9(),/%\- ]+?)\s*(-?\d+\.\d+|100|0)\s*(Buy|Sell|Neutral|Overbought|Oversold|Less Volatility|High Volatility)"
+    matches = re.findall(pattern, raw_string_cleaned)
+
+    #  Création du DataFrame
+    df = pd.DataFrame(matches, columns=["Name", "Value", "Action"])
+    df["Value"] = pd.to_numeric(df["Value"], errors="coerce")
+
+    # Affichage du DataFrame final
+    return df
+
+
+
+
+print(oil_key_indicators())
