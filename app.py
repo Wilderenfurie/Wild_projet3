@@ -10,6 +10,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium_stealth import stealth
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 #historique quotidien du prix de vente a la cloture de crude oil wti
 def oil_historical_price_api():
@@ -60,15 +63,32 @@ def oil_key_indicators():
  
 #recuperation des indicators clé de investing.com
 def oil_key_indicators():
-    url="https://www.investing.com/commodities/crude-oil-technical"
+   
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
-    driver = webdriver.Chrome(options=options)
-    driver.get(url)
+    options.add_argument("--headless")  # Exécuter en arrière-plan
+    options.add_argument("--disable-blink-features=AutomationControlled")  # Désactiver la détection Selenium
+    options.add_argument("--disable-dev-shm-usage")
 
-    # gestion des popup cookies
+    #Lancer Chrome avec Selenium Stealth
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+    #Appliquer le mode "Stealth" pour éviter d'être détecté
+    stealth(driver,
+        languages=["en-US", "en"],
+        vendor="Google Inc.",
+        platform="Win64",
+        webgl_vendor="Intel Inc.",
+        renderer="Intel Iris OpenGL Engine",
+        fix_hairline=True,
+    )
+
+    # Ouvrir la page
+    driver.get("https://www.investing.com/commodities/crude-oil-technical")
+    print("Page ouverte sans être détecté")
+
+   # gestion des popup cookies
     try:
-        cookie_button = WebDriverWait(driver, 5).until(
+        cookie_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler"))
         )
         cookie_button.click()
@@ -85,6 +105,7 @@ def oil_key_indicators():
         print("Bouton 'Daily' cliqué.")
     except Exception as e:
         print(f"Erreur en cliquant sur 'Daily' : {e}")
+        driver.quit()
         driver.quit()
         return pd.DataFrame()
 
@@ -131,8 +152,6 @@ def oil_key_indicators():
 
     # Affichage du DataFrame final
     return df
-
-
 
 
 print(oil_key_indicators())
