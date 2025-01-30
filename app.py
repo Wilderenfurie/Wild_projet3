@@ -10,6 +10,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium_stealth import stealth
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import nltk
 nltk.download('punkt_tab')
 nltk.download('wordnet')
@@ -143,27 +146,6 @@ def oil_key_indicators():
 
 
 
-
-print(oil_key_indicators())
-
-
-# Dataframe avec données numériques
-df_prix_vente_alpha = oil_historical_price_api()
-print(df_prix_vente_alpha)
-
-df_yahoo=oil_historical_price_v2()
-print(df_yahoo)
-
-df_production = oil_field_production_api()
-print(df_production)
-
-df_stock = oil_commercial_stock_api()
-print(df_stock)
-
-df_supply = oil_days_supply_api()
-print(df_supply)
-
-
 #Web scraping & sentiment analysis
 # Création d'une fonction qui analyse le contenu de plusieurs sites web
 def sitesweb_analyse_sentiment(url: str):
@@ -242,7 +224,6 @@ def add_to_dataframe(urls):
     df_sentiment = pd.concat([df_sentiment, df_new_row], ignore_index = True)
 
 # Application des fonctions précédentes
-df_sentiment = pd.DataFrame()
 urls = [
     "https://www.eia.gov/todayinenergy/",
     "https://oilprice.com/Latest-Energy-News/World-News/",
@@ -251,5 +232,14 @@ urls = [
     "https://www.investing.com/commodities/crude-oil-news"
 ]
 
+
+
+# Dataframe avec données numériques
+df_prix_vente_alpha = oil_historical_price_api()
+df_yahoo=oil_historical_price_v2()
+df_production = oil_field_production_api()
+df_stock = oil_commercial_stock_api()
+df_supply = oil_days_supply_api()
+df_indicators=oil_key_indicators()
+df_sentiment = pd.DataFrame()
 add_to_dataframe(urls)
-print(df_sentiment)
