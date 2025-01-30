@@ -21,8 +21,6 @@ nltk.download('vader_lexicon')
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-from nltk.sentiment import SentimentIntensityAnalyzer
-import string
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 
