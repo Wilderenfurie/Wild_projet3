@@ -15,15 +15,12 @@ nltk.download('punkt_tab')
 nltk.download('wordnet')
 nltk.download('stopwords')
 nltk.download('vader_lexicon')
-from nltk.tokenize import PunktTokenizer
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.sentiment import SentimentIntensityAnalyzer
 import string
-from transformers import pipeline
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from textblob import TextBlob
 
 #historique quotidien du prix de vente a la cloture de crude oil wti
 def oil_historical_price_api():
@@ -152,6 +149,12 @@ def oil_key_indicators():
 print(oil_key_indicators())
 
 
+# Dataframe avec données numériques
+df_prix_vente_alpha = oil_historical_price_api()
+df_yahoo=oil_historical_price_v2()
+df_production = oil_field_production_api()
+df_stock = oil_commercial_stock_api()
+df_supply = oil_days_supply_api()
 
 
 #Web scraping & sentiment analysis à partir d'API News
